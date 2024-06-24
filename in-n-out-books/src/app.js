@@ -5,6 +5,7 @@
 //Set up express application
 const express = require("express");
 const createError = require("http-errors");
+const books = require("../database/books");
 
 const app = express();
 
@@ -25,22 +26,62 @@ app.get("/", async(req, res, next)=> {
         background: #F0F8FF;
         font-size: 1.25rem;
       }
-      h1, h2 {
+      h1 {
         color: #2F4F4F;
         font-family: 'Consolas';
         text-align: center;
       }
+      h2, h4 {
+        color: #b0544d;
+
+      }
+      h3 {
+        color: #2F4F4F;
+        text-decoration: underline;
+      }
       .container {
-        width: 50%;
+        width: 100%;
         margin: 0 auto;
+      }
+      .container .header {
+        text-align: center;
+      }
+
+      .container .book {
+        text-align: left;
+        border: 2px solid #192e2e;
+        margin: 5px;
       }
       </style>
   </head>
   <body>
     <div class="container">
-      <header>
-      <h1>In-N-Out Books</h1>
-      <h2>Organize and Manage All of Your Favorite Books!</h2>
+      <div class= "header">
+        <h1>In-N-Out Books</h1>
+        <h2>Organize and Manage All of Your Favorite Books!</h2>
+      </div>
+
+      <br>
+
+      <main>
+        <div class="book">
+         <h3>To Kill a Mocking Bird</h3>
+         <h4>Harper Lee</h4>
+         <p>Follow Scout Finch as she learns about morality, empathy, and racial injustice during 1930 in the deep south.</p>
+        </div>
+
+        <div class="book">
+         <h3>1984</h3>
+         <h4>George Orwell</h4>
+         <p>A dystopian novel depicting a totalitarian society where the government controls every aspect of life.</p>
+        </div>
+
+        <div class="book">
+        <h3>The Alchemist</h3>
+        <h4>Paulo Coelho</h4>
+        <p>A philosophical novel following a young andalusian shepherd named Santiago.</p>
+       </div>
+      </main>
     </div>
   </body>
   </html>
@@ -48,6 +89,38 @@ app.get("/", async(req, res, next)=> {
 
   res.send(html);
 });
+
+//Get route to return an array of books
+app.get("/api/books", async(req, res, next) => {
+  try {
+    const allBooks = await books.find();
+    console.log("all Books", allBooks);
+    res.send(allBooks);
+  }catch (err){
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
+//Get route for /api/books/:id
+app.get("/api/books/:id", async (req, res, next) => {
+  try {
+    let {id} = req.params;
+    id = parseInt(id);
+
+    if (isNaN(id)) {
+      return next(createError(400, "Input must be a number"));
+    }
+    const book = await books.findOne({ id: Number(req.params.id)});
+
+    console.log("Book: ", book);
+    res.send(book);
+  }catch (err) {
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
 //Middleware functions to handle errors
 app.use(function(req, res, next) {
   next(createError(404));

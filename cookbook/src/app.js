@@ -5,6 +5,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const createError = require("http-errors");
+const recipes =require("../database/recipes");
 
 //Create express application
 const app = express();
@@ -71,6 +72,36 @@ res.send(html); // Sends the HTML content to the client });
 
 });
 
+//GET endpoint for /api/recipes
+app.get("/api/recipes", async(req, res, next)=> {
+  try {
+    const allRecipes = await recipes.find();
+    console.log("All Recipes: ", allRecipes); //logs all recipes
+    res.send(allRecipes); //send response with all
+  } catch (err) {
+    console.error("Error: ", err.message); //logs error message
+    next(err);
+  }
+});
+
+//Get endpoint for /api/recipes/:id
+app.get("/api/recipes/:id", async (req, res, next) => {
+  try {
+    let {id} = req.params;
+    id = parseInt(id);
+
+    if (isNaN(id)) {
+      return next(createError(400, "Input must be a number"));
+    }
+    const recipe = await recipes.findOne({ id: Number(req.params.id)});
+
+    console.log("Recpie: ", recipe);
+    res.send(recipe);
+  }catch (err) {
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
