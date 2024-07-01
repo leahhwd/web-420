@@ -121,6 +121,43 @@ app.get("/api/books/:id", async (req, res, next) => {
   }
 });
 
+//Post route for /api/books
+app.post("/api/books", async (req, res, next) => {
+  try  {
+    const newBook = req.body;
+    const expectedKeys = ["id", "title", "author"];
+    const recievedKeys = Object.keys(newBook);
+
+    if(!recievedKeys.every(key=> expectedKeys.includes(key)) ||
+    recievedKeys.length !== expectedKeys.length){
+      console.error("Bad Request: Missing keys or extra keys", recievedKeys);
+      return next(createError(400, "Bad Request"));
+    }
+
+    const result = await books.insertOne(newBook);
+    console.log("Result: ", result);
+    res.status(201).send({id: result.ops[0].id});
+  }catch(err) {
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+//Delete endpoint
+app.delete("/api/books/:id", async(req, res, next) => {
+  try {
+    const {id} = req.params;
+    const result = await books.deleteOne({id: parseInt(id)});
+    console.log("Result: ", result);
+    res.status(204).send();
+  } catch (err) {
+    if (err.message === "No matching item found") {
+      return next(createError(404, "Book not found"));
+    }
+    console.error("Error: ", err.message);
+    next(err);
+  }
+})
+
 //Middleware functions to handle errors
 app.use(function(req, res, next) {
   next(createError(404));

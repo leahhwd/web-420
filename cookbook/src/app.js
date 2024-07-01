@@ -102,6 +102,48 @@ app.get("/api/recipes/:id", async (req, res, next) => {
     next(err);
   }
 });
+
+//Post endpoint for /api/recipes
+
+app.post("/api/recipes", async (req, res, next) => {
+  try {
+    const newRecipe = req.body;
+
+    //add validation to the POST endpoint to check the request body
+    const expectedKeys = ["id", "name", "ingredients"];
+    const recievedKeys = Object.keys(newRecipe);
+
+    if(!recievedKeys.every(key=> expectedKeys.includes(key)) ||
+    recievedKeys.length !== expectedKeys.length){
+      console.error("Bad Request: Missing keys or extra keys", recievedKeys);
+      return next(createError(400, "Bad Request"));
+    }
+
+    const result = await recipes.insertOne(newRecipe);
+    console.log("Result: ", result);
+    res.status(201).send({id: result.ops[0].id});
+  }catch(err) {
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
+//delete endpoint
+
+app.delete("/api/recipes/:id", async(req, res, next) => {
+  try {
+    const {id} = req.params;
+    const result = await recipes.deleteOne({id: parseInt(id)});
+    console.log("Result: ", result);
+    res.status(204).send();
+  } catch (err) {
+    if (err.message === "No matching item found") {
+      return next(createError(404, "Recipe not found"));
+    }
+    console.error("Error: ", err.message);
+    next(err);
+  }
+})
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
