@@ -144,6 +144,40 @@ app.delete("/api/recipes/:id", async(req, res, next) => {
     next(err);
   }
 })
+
+//Put endpoint for /api/recipes/:id
+app.put("/api/recipes/:id", async (req, res, next) => {
+  try {
+    let {id} = req.params
+    let recipe = req.body;
+    id = parseInt(id);
+
+    if(isNaN(id)) {
+      return next(createError(400, "Input must be a number"));
+    }
+    //add validation to the put endpoint
+    const expectedKeys = ["name", "ingredients"];
+    const receivedKeys = Object.keys(recipe);
+
+    if (!receivedKeys.every(key => expectedKeys.includes(key)) ||
+    receivedKeys.length !== expectedKeys.length) {
+      console.error("Bad Request: Missing keys or extra keys", receivedKeys);
+      return next(createError(400, "Bad Request"));
+    }
+
+    const result = await recipes.updateOne({id: id}, recipe);
+    console.log("Result: ", result);
+    res.status(204).send();
+  } catch (err) {
+    if (err.message === "No matching item found") {
+      console.log("Recipe not found", err.message)
+      return next(createError(404, "Recipe not found"));
+    }
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

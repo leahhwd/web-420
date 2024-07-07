@@ -156,7 +156,41 @@ app.delete("/api/books/:id", async(req, res, next) => {
     console.error("Error: ", err.message);
     next(err);
   }
-})
+});
+//Put endpoint
+app.put("/api/books/:id", async (req, res, next) => {
+  try {
+    let {id} = req.params
+    let book = req.body;
+    id = parseInt(id);
+    //Check if id isn't a number
+    if(isNaN(id)) {
+      return next(createError(400, "Input must be a number"));
+    }
+    //add validation to the put endpoint
+    const expectedKeys = ["title", "author"];
+    const receivedKeys = Object.keys(book);
+
+//check required keys
+    if (!receivedKeys.every(key => expectedKeys.includes(key)) ||
+    receivedKeys.length !== expectedKeys.length) {
+      console.error("Bad Request: Missing keys", receivedKeys);
+      return next(createError(400, "Bad Request"));
+    }
+    //update book and return 204 status code
+    const result = await books.updateOne({id: id}, book);
+    console.log("Result: ", result);
+    res.status(204).send();
+    //response for errors
+  } catch (err) {
+    if (err.message === "No matching item found") {
+      console.log("Book not found", err.message)
+      return next(createError(404, "Book not found"));
+    }
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
 
 //Middleware functions to handle errors
 app.use(function(req, res, next) {
