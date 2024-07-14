@@ -3,8 +3,10 @@
 //app.js for in-n-out-books app
 
 //Set up express application
+const bcrypt = require("bcryptjs/dist/bcrypt");
 const express = require("express");
 const createError = require("http-errors");
+const users = require("../../cookbook/database/users");
 const books = require("../database/books");
 
 const app = express();
@@ -187,6 +189,46 @@ app.put("/api/books/:id", async (req, res, next) => {
       console.log("Book not found", err.message)
       return next(createError(404, "Book not found"));
     }
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
+//Post end Point for /api/login
+app.post("/api/login", async (req, res, next) => {
+  console.log("Request body", req.body);
+  //test for missing parameter values
+  try{
+    const user = req.body;
+
+    const expectedKeys = ["email", "password"];
+    const receivedKeys = Object.keys(user);
+
+    if(!receivedKeys.every(key => expectedKeys.includes(key)) ||
+    receivedKeys.length !== expectedKeys.length) {
+      console.error("Bad Request: Missing email or password", receivedKeys);
+      return next(createError(400, "Bad Request"));
+    }
+
+    //find user and compare password
+    let loginUser;
+    try {
+      loginUser = await users.findOne({email: user.email});
+    } catch (err) {
+      loginUser = null;
+    }
+
+    const result = bcrypt.compareSync(user.password, loginUser.password);
+
+    if(result){
+      res.status(200).send({ message: "Authentication successful"});
+    } else {
+      console.error("password is incorrect");
+      return next(createError(401, "Unauthorized"));
+    }
+
+  } catch(err) {
+    console.error("Error: ", err);
     console.error("Error: ", err.message);
     next(err);
   }
