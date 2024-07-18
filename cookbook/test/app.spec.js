@@ -1,6 +1,7 @@
 //require statements for app.js and supertest
 const app = require("../src/app");
 const request = require("supertest");
+const res = require("express/lib/response");
 
 //create a new test suite using jest describe method
 describe("Chapter 3: API Tests", () => {
@@ -131,5 +132,47 @@ describe("Chapter 6 tests", () => {
     expect(res2.statusCode).toEqual(400);
     expect(res2.body.message).toEqual("Bad Request");
   });
-
 });
+
+describe("Chapter 7: API tests", () => {
+
+  it("should return a 200 status code with a message of 'Password reset successful' when resetting a user's password", async () => {
+    const res = await request(app).post("/api/users/harry@hogwarts.edu/reset-password").send({
+      securityQuestions: [
+        {answer: "Hedwig"},
+        {answer: "Quidditch Through the Ages"},
+        {answer: "Evans"}
+      ],
+      newPassword: "password"
+    });
+
+    expect(res.statusCode).toEqual(200);
+    expect(res.body.message).toEqual("Password reset successful");
+  });
+
+  it("should return a 400 status code with a message of 'Bad Request' when the request body fails ajv validation", async () => {
+    const res = await request(app).post("/api/users/harry@hogwarts.edu/reset-password").send({
+      securityQuestions: [
+        {answer: "Hedwig", question: "What is your pet's name?"},
+        {answer: "Quidditch Through the Ages", myName: "Harry Potter"}
+      ],
+      newPassword: "password"
+    });
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.message).toEqual("Bad Request");
+  });
+
+  it("should return a 401 status code with a message of 'Unauthorized' when the security answers do not match", async () =>{
+    const res = await request(app).post("/api/users/harry@hogwarts.edu/reset-password").send({
+      securityQuestions: [
+        {answer: "Fluffy"},
+        {answer: "Quidditch Through the Ages"},
+        {answer: "Evans"}
+      ],
+      newPassword: "password"
+    });
+    expect(res.statusCode).toEqual(401);
+    expect(res.body.message).toEqual("Unauthorized");
+  });
+})

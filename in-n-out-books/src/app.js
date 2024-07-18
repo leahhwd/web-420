@@ -8,6 +8,8 @@ const express = require("express");
 const createError = require("http-errors");
 const users = require("../../cookbook/database/users");
 const books = require("../database/books");
+const Ajv = require("ajv");
+const ajv = new Ajv();
 
 const app = express();
 
@@ -229,6 +231,58 @@ app.post("/api/login", async (req, res, next) => {
 
   } catch(err) {
     console.error("Error: ", err);
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
+//Ajv JSON Schema Object to validate the request body
+const securityQuestionsSchema = {
+  type: "object",
+  properties: {
+    securityQuestions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          answer: {type: "string"}
+        },
+        required: ["answer"],
+        additionalProperties: false
+      }
+    }
+  },
+  required: ["securityQuestions"],
+  additionalProperties: false,
+};
+
+//Post endpoint for /api/users/verify-security-question
+app.post("/api/users/:email/verify-security-question", async (req, res, next) => {
+  try{
+    const {securityQuestions} = req.body;
+    const {email} = req.params;
+
+    //use ajv to validate request body
+    const validate = ajv.compile(securityQuestionsSchema);
+    const valid = validate(req.body);
+
+    if(!valid) {
+      console.error("Bad Request: Invalid request body", validate.errors);
+      return next(createError(400, "Bad Request"));
+    }
+
+    const user = await users.findOne({email: email});
+
+    //Check if security questions match
+    if(securityQuestions[0].answer !== user.securityQuestions[0].answer ||
+       securityQuestions[1].answer !== user.securityQuestions[1].answer ||
+       securityQuestions[2].answer !== user.securityQuestions[2].answer) {
+         return next(createError(401, "Unauthorized"));
+       } else {
+         res.status(200).send({message: 'Security questions successfully answered', user: user});
+       }
+
+  } catch (err) {
     console.error("Error: ", err.message);
     next(err);
   }
