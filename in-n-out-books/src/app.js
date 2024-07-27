@@ -6,7 +6,7 @@
 const bcrypt = require("bcryptjs/dist/bcrypt");
 const express = require("express");
 const createError = require("http-errors");
-const users = require("../../cookbooks/database/users");
+const users = require("../database/users");
 const books = require("../database/books");
 const Ajv = require("ajv");
 const ajv = new Ajv();
